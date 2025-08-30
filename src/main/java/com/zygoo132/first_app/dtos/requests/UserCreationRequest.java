@@ -18,6 +18,7 @@ public class UserCreationRequest {
     private String password;
     @Size(min = 1, message = "First name must not be empty")
     private String firstName;
+    @Size(min = 1, message = "Last name must not be empty")
     private String lastName;
     private String dob;
 }
