@@ -16,6 +16,7 @@ public class UserCreationRequest {
     private String username;
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
+    @Size(min = 1, message = "First name must not be empty")
     private String firstName;
     private String lastName;
     private String dob;
