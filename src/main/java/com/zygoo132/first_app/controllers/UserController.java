@@ -5,6 +5,7 @@ import com.zygoo132.first_app.dtos.requests.UserCreationRequest;
 import com.zygoo132.first_app.dtos.requests.UserUpdateRequest;
 import com.zygoo132.first_app.entities.User;
 import com.zygoo132.first_app.services.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public User createUser(@RequestBody UserCreationRequest userCreationRequest) {
+    public User createUser(@RequestBody @Valid UserCreationRequest userCreationRequest) {
         return userService.createRequest(userCreationRequest);
     }
 
