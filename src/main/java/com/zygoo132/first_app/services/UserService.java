@@ -3,6 +3,8 @@ package com.zygoo132.first_app.services;
 import com.zygoo132.first_app.dtos.requests.UserCreationRequest;
 import com.zygoo132.first_app.dtos.requests.UserUpdateRequest;
 import com.zygoo132.first_app.entities.User;
+import com.zygoo132.first_app.exceptions.AppException;
+import com.zygoo132.first_app.exceptions.ErrorCode;
 import com.zygoo132.first_app.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,7 @@ public class UserService {
         User user = new User();
 
         if(userRepository.existsByUsername(request.getUsername())){
-            throw new RuntimeException("Username already exists");
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
 
         user.setUsername(request.getUsername());
@@ -37,7 +39,7 @@ public class UserService {
     }
 
     public User getUserById(String id){
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found") );
+        return userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND) );
     }
 
     public User updateUser(String userId, UserUpdateRequest request){
