@@ -3,10 +3,13 @@ package com.zygoo132.first_app.controllers;
 import com.zygoo132.first_app.dtos.requests.UserCreationRequest;
 import com.zygoo132.first_app.dtos.requests.UserUpdateRequest;
 import com.zygoo132.first_app.dtos.responses.ApiResponse;
-import com.zygoo132.first_app.entities.User;
+import com.zygoo132.first_app.dtos.responses.UserResponse;
+import com.zygoo132.first_app.mapper.UserMapper;
 import com.zygoo132.first_app.services.UserService;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
@@ -16,38 +19,40 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<User>> createUser(
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @RequestBody @Valid UserCreationRequest userCreationRequest,
             WebRequest request) {
-        User user = userService.createRequest(userCreationRequest);
+        UserResponse user = userMapper.toResponse(userService.createUser(userCreationRequest));
         return ResponseEntity.ok(ApiResponse.success(user, request.getDescription(false)));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<User>>> getAllUsers(WebRequest request) {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(ApiResponse.success(users, request.getDescription(false)));
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(WebRequest request) {
+        List<UserResponse> userResponses = userService.getAllUsers();
+        return ResponseEntity.ok(ApiResponse.success(userResponses, request.getDescription(false)));
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<User>> getUserById(
+    public ResponseEntity<ApiResponse<UserResponse>> getUserById(
             @PathVariable String userId,
             WebRequest request) {
-        User user = userService.getUserById(userId);
-        return ResponseEntity.ok(ApiResponse.success(user, request.getDescription(false)));
+        UserResponse userResponse = userService.getUserById(userId);
+        return ResponseEntity.ok(ApiResponse.success(userResponse, request.getDescription(false)));
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<ApiResponse<User>> updateUser(
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable String userId,
             @RequestBody @Valid UserUpdateRequest userUpdateRequest,
             WebRequest request) {
-        User updatedUser = userService.updateUser(userId, userUpdateRequest);
+        UserResponse updatedUser = userService.updateUser(userId, userUpdateRequest);
         return ResponseEntity.ok(ApiResponse.success(updatedUser, request.getDescription(false)));
     }
 
