@@ -3,6 +3,7 @@ package com.zygoo132.first_app.services;
 import com.zygoo132.first_app.dtos.requests.UserCreationRequest;
 import com.zygoo132.first_app.dtos.requests.UserUpdateRequest;
 import com.zygoo132.first_app.dtos.responses.UserResponse;
+import com.zygoo132.first_app.emums.Role;
 import com.zygoo132.first_app.entities.User;
 import com.zygoo132.first_app.exceptions.AppException;
 import com.zygoo132.first_app.exceptions.ErrorCode;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -22,16 +24,19 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
-
+    UserRepository userRepository;
+    UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     // Create a new user
     public User createUser(UserCreationRequest request){
 
         User user = userMapper.toUser(request);
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        HashSet<String> roles = new HashSet<>();
+        roles.add(Role.USER.name());
+        user.setRoles(roles);
 
         if(userRepository.existsByUsername(user.getUsername())){
             throw new AppException(ErrorCode.USER_EXISTS);

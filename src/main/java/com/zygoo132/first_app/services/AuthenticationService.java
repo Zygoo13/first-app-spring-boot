@@ -1,7 +1,7 @@
 package com.zygoo132.first_app.services;
 
-
-import com.nimbusds.jose.*;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -18,15 +18,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.parameters.P;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.StringJoiner;
 
 @Slf4j
 @Service
@@ -35,43 +36,44 @@ import java.util.Date;
 public class AuthenticationService {
 
     UserRepository userRepository;
+    PasswordEncoder passwordEncoder;
 
     @NonFinal
-    protected static final String SIGNING_KEY = "elPRxrlD0jfSXa+kaWpl8iEWA2msqi4hkf/Eu5oVhybSgxAFDhkPr42k0SNTOczM"; // 32 chars
+    @Value("${jwt.signing-key}")
+    String signingKey;
 
-    private String genarateToken(String username){
-        JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
-
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(username)
-                .issuer("Zygoo132")
-                .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
-                ))
-                .claim("custom-claim", "custom-value")
-                .build();
-
-        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
-
-        JWSObject jwsObject = new JWSObject(jwsHeader, payload);
-
+    /** Generate JWT token */
+    private String generateToken(User user) {
         try {
-            jwsObject.sign(new MACSigner(SIGNING_KEY.getBytes()));
-            return jwsObject.serialize();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .subject(user.getUsername())
+                    .issuer("Zygoo132")
+                    .issueTime(new Date())
+                    .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                    .claim("scope", buildScope(user))
+                    .build();
+
+            SignedJWT signedJWT = new SignedJWT(
+                    new com.nimbusds.jose.JWSHeader(JWSAlgorithm.HS512),
+                    claims
+            );
+
+            signedJWT.sign(new MACSigner(signingKey.getBytes()));
+            return signedJWT.serialize();
+
         } catch (JOSEException e) {
-            log.error("cannot sign the token", e);
-            throw new RuntimeException(e);
+            log.error("Cannot sign the token", e);
+            throw new RuntimeException("Error while generating token", e);
         }
     }
 
-    public AuthenticationResponse authenticated(AuthenticationRequest request){
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+    /** Authenticate user and return token */
+    public AuthenticationResponse authenticated(AuthenticationRequest request) {
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOTEXISTS));
 
-        if(passwordEncoder.matches(request.getPassword(), user.getPassword())){
-            var token = genarateToken(user.getUsername());
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            String token = generateToken(user);
             return AuthenticationResponse.builder()
                     .isAuthenticated(true)
                     .token(token)
@@ -80,20 +82,24 @@ public class AuthenticationService {
         throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 
+    /** Validate token (introspection endpoint) */
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
-        var token = request.getToken();
+        SignedJWT signedJWT = SignedJWT.parse(request.getToken());
+        var verifier = new MACVerifier(signingKey.getBytes());
 
-        JWSVerifier verifier = new MACVerifier(SIGNING_KEY.getBytes());
-
-        SignedJWT signedJWT = SignedJWT.parse(token);
-
-        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-        var verified = signedJWT.verify(verifier);
+        boolean verified = signedJWT.verify(verifier);
+        Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
 
         return IntrospectResponse.builder()
-                .isActive(verified && new Date().before(expirationTime))
+                .isActive(verified && new Date().before(expiration))
                 .build();
+    }
 
+    /** Build scope string from roles */
+    private String buildScope(User user) {
+        if (CollectionUtils.isEmpty(user.getRoles())) return "";
+        StringJoiner scopes = new StringJoiner(" ");
+        user.getRoles().forEach(scopes::add);
+        return scopes.toString();
     }
 }
