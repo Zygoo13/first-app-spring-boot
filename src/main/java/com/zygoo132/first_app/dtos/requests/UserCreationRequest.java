@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class UserCreationRequest {
     @Size(min = 3, max = 15, message = "Username must be between 3 and 15 characters")
     private String username;
-    @Size(min = 6, message = "Password must be at least 6 characters long")
+    @Size(min = 3, message = "Password must be at least 6 characters long")
     private String password;
     private String firstName;
     private String lastName;
