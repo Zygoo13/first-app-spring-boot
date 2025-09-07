@@ -1,8 +1,8 @@
 package com.zygoo132.first_app.exceptions;
 
-
 import com.zygoo132.first_app.dtos.responses.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -21,15 +21,25 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleException(Exception ex, WebRequest request) {
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
         return ResponseEntity
-                .internalServerError()
+                .status(ErrorCode.FORBIDDEN.getStatus())
+                .body(ApiResponse.error(
+                        ErrorCode.FORBIDDEN.getCode(),
+                        ErrorCode.FORBIDDEN.getMessage(),
+                        request.getDescription(false)
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex, WebRequest request) {
+        return ResponseEntity
+                .status(ErrorCode.INTERNAL_ERROR.getStatus())
                 .body(ApiResponse.error(
                         ErrorCode.INTERNAL_ERROR.getCode(),
-                        ex.getMessage(),
+                        "Internal server error", // tránh trả ex.getMessage() ra client (lộ thông tin nhạy cảm)
                         request.getDescription(false)
                 ));
     }
 }
-

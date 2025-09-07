@@ -10,6 +10,8 @@ public enum ErrorCode {
     USER_EXISTS(1003, "User already exists", HttpStatus.CONFLICT),
     USER_NOTEXISTS(1004, "User not exists", HttpStatus.CONFLICT),
     UNAUTHENTICATED(1005, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN(1006, "Forbidden", HttpStatus.FORBIDDEN),
+    ROLE_NOT_FOUND(1007, "Role not found", HttpStatus.NOT_FOUND),
     INTERNAL_ERROR(1000, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
