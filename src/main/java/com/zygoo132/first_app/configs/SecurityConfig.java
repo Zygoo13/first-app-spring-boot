@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -22,6 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
@@ -38,12 +40,14 @@ public class SecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole(Role.ADMIN.name())
                         .anyRequest().authenticated()
                 )
+
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                )
                 .csrf(AbstractHttpConfigurer::disable);
 
         return httpSecurity.build();
@@ -52,7 +56,7 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter(){
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return jwtAuthenticationConverter;

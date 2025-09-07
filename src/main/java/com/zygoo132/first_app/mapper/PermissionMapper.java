@@ -1,5 +1,6 @@
 package com.zygoo132.first_app.mapper;
 
+import com.zygoo132.first_app.dtos.requests.PermissionRequest;
 import com.zygoo132.first_app.dtos.requests.UserCreationRequest;
 import com.zygoo132.first_app.dtos.requests.UserUpdateRequest;
 import com.zygoo132.first_app.dtos.responses.PermissionResponse;
@@ -13,19 +14,10 @@ import org.mapstruct.MappingTarget;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface UserMapper {
+public interface PermissionMapper {
 
-    @Mapping(target = "id", ignore = true)
-    User toUser(UserCreationRequest request);
 
-    UserResponse toResponse(User user);
-
-    List<UserResponse> toResponse(List<User> users);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "username", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    void updateUser(@MappingTarget User user, UserUpdateRequest request);
+    Permission toPermission(PermissionRequest request);
 
     PermissionResponse toPermissionResponse(Permission permission);
 

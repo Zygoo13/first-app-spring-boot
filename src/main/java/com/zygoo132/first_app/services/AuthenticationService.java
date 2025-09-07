@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -97,9 +99,25 @@ public class AuthenticationService {
 
     /** Build scope string from roles */
     private String buildScope(User user) {
-        if (CollectionUtils.isEmpty(user.getRoles())) return "";
-        StringJoiner scopes = new StringJoiner(" ");
-        user.getRoles().forEach(scopes::add);
-        return scopes.toString();
+        StringJoiner stringJoiner = new StringJoiner(" ");
+
+        if (!CollectionUtils.isEmpty(user.getRoles())) {
+            user.getRoles().forEach(role -> {
+                // Thêm prefix ROLE_
+                stringJoiner.add("ROLE_" + role.getName());
+
+                if (!CollectionUtils.isEmpty(role.getPermissions())) {
+                    role.getPermissions()
+                            .forEach(permission ->
+                                    // Thêm prefix PERM_
+                                    stringJoiner.add("PERM_" + permission.getName()));
+                }
+            });
+        }
+
+        return stringJoiner.toString();
     }
+
+
+
 }

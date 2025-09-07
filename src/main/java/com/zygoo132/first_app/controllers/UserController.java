@@ -77,4 +77,10 @@ public class UserController {
                 request.getDescription(false)
         ));
     }
+
+    @GetMapping("/my-profile")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(WebRequest request) {
+        var user = userService.getMyProfile();
+        return ResponseEntity.ok(ApiResponse.success(user, request.getDescription(false)));
+    }
 }

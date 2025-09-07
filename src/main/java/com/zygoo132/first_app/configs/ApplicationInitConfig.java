@@ -1,7 +1,8 @@
 package com.zygoo132.first_app.configs;
 
-import com.zygoo132.first_app.emums.Role;
+import com.zygoo132.first_app.emums.Role; // enum
 import com.zygoo132.first_app.entities.User;
+import com.zygoo132.first_app.repositories.RoleRepository;
 import com.zygoo132.first_app.repositories.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +22,25 @@ import java.util.HashSet;
 public class ApplicationInitConfig {
 
     PasswordEncoder passwordEncoder;
+    RoleRepository roleRepository;
 
     @Bean
     ApplicationRunner applicationRunner(UserRepository userRepository) {
         return args -> {
-            if(userRepository.findByUsername("admin").isEmpty()){
-                var roles = new HashSet<String>();
-                roles.add(Role.ADMIN.name());
+            if (userRepository.findByUsername("admin").isEmpty()) {
+
+                // Tìm role ADMIN trong DB, nếu chưa có thì tạo mới
+                var roleAdmin = roleRepository.findById(Role.ADMIN.name())
+                        .orElseGet(() -> roleRepository.save(
+                                com.zygoo132.first_app.entities.Role.builder()
+                                        .name(Role.ADMIN.name())
+                                        .description("Administrator role")
+                                        .build()
+                        ));
+
+                var roles = new HashSet<com.zygoo132.first_app.entities.Role>();
+                roles.add(roleAdmin);
+
                 User user = User.builder()
                         .username("admin")
                         .password(passwordEncoder.encode("admin"))
